@@ -19,6 +19,6 @@ import com.acme.utils.internal.StringInternal;
 
 public class StringUtils {
     public static String encode(String str) {
-        return "encoded " + StringInternal.encode(str);
+        return "encoded " + StringInternal.encode(str) + "update";
     }
 }

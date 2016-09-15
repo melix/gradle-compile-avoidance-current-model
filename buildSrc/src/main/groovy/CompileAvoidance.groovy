@@ -10,20 +10,29 @@ import org.gradle.jvm.tasks.api.ApiJar
 class CompileAvoidance implements Plugin<Project> {
     void apply(Project project) {
         ApiExtension extension = (ApiExtension) project.extensions.create("api", ApiExtension)
-        def compileConfiguration = project.configurations.getByName('compileClasspath')
-        compileConfiguration.attributes(type: 'api')
-        project.tasks.withType(JavaCompile).all { JavaCompile compileTask ->
-            def apiJar = project.tasks.create("${compileTask.name}ApiJar", ApiJar, { ApiJar apiJar ->
-                apiJar.outputFile = project.file("$project.buildDir/api/${project.name}-${compileTask.name}.jar")
-                apiJar.inputs.dir(compileTask.destinationDir).skipWhenEmpty()
-                apiJar.exportedPackages = [] as Set
-                apiJar.doFirst {
+        PlatformsExtension platforms = (PlatformsExtension) project.extensions.create("platforms", PlatformsExtension)
+
+        project.afterEvaluate {
+            List<String> targetPlatforms = platforms.targetPlatforms as List
+            if (!targetPlatforms) {
+                targetPlatforms << 'java7'
+            }
+            println "Target platforms for $project.name: ${targetPlatforms}"
+
+            def compileConfiguration = project.configurations.getByName('compileClasspath')
+            compileConfiguration.attributes(type: 'api')
+
+            project.tasks.withType(JavaCompile).all { JavaCompile compileTask ->
+                def apiJar = project.tasks.create("${compileTask.name}ApiJar", ApiJar, { ApiJar apiJar ->
+                    apiJar.outputFile = project.file("$project.buildDir/api/${project.name}-${compileTask.name}.jar")
+                    apiJar.inputs.dir(compileTask.destinationDir).skipWhenEmpty()
                     apiJar.exportedPackages = extension.exports
-                }
-                apiJar.dependsOn(compileTask)
-            } as Action)
-            attachArtifact(project, apiJar)
+                    apiJar.dependsOn(compileTask)
+                } as Action)
+                attachArtifact(project, apiJar)
+            }
         }
+
     }
 
     @CompileDynamic

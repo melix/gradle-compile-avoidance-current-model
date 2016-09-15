@@ -17,6 +17,6 @@ package com.acme.utils.internal;
 
 public class StringInternal {
     public static String encode(String str) {
-        return str.toUpperCase();
+        return "X" + str.toUpperCase();
     }
 }

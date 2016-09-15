@@ -1,4 +1,7 @@
 api {
-   exports 'com.acme.utils'
+    exports 'com.acme.utils'
 }
 
+platforms {
+    targetPlatforms 'java7', 'java8', 'java9'
+}
