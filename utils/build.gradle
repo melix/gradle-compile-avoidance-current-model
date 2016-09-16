@@ -8,5 +8,19 @@ platforms {
 }
 
 project.afterEvaluate {
+    compileJavaJava7.source(file('src/main/java7'))
     compileJavaJava9.source(file('src/main/java9'))
+
+    task multireleaseJar(type:Jar) {
+        dependsOn compileJavaJava7, compileJavaJava9
+        baseName = "${project.name}-multi"
+
+        from compileJavaJava7.destinationDir
+        into('META-INF/versions/9') {
+            from compileJavaJava9.destinationDir
+        }
+
+        manifest.attributes('Multi-Release': 'true')
+    }
 }
+

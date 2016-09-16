@@ -15,8 +15,9 @@
  */
 package com.acme.utils;
 
-public class Java9Only {
+public class Main {
     public static void main(String[] args) {
+        System.out.println("Java 9 specific version");
         System.out.println("Your pid is " + ProcessHandle.current().getPid());
     }
 }
