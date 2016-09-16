@@ -1,4 +1,5 @@
 api {
+    moduleName = 'com.acme.utils'
     exports 'com.acme.utils'
 }
 

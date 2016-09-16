@@ -56,11 +56,28 @@ class CompileAvoidance implements Plugin<Project> {
                         }
                         project.tasks.getByName('build').dependsOn jar
                     }
+
+                    if (platform=='java9' && extension.moduleName) {
+                        addJigsawModuleFile(project, taskName, platformCompile, extension)
+                    }
                 }
             }
 
         }
 
+    }
+
+    private void addJigsawModuleFile(Project project, String taskName, JavaCompile platformCompile, ApiExtension extension) {
+        def genDir = new File("$project.buildDir/generates-sources/${taskName}/src/main/jigsaw")
+        platformCompile.source(project.files(genDir))
+        platformCompile.inputs.properties(exports: extension.exports)
+        platformCompile.doFirst {
+            genDir.mkdirs()
+            def exports = extension.exports.collect { "    exports $it;" }.join('\n')
+            new File(genDir, 'module-info.java').write("""module ${extension.moduleName} {
+${exports}
+}""")
+        }
     }
 
 }
