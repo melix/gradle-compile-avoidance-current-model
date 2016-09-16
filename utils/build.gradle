@@ -5,6 +5,8 @@ api {
 
 platforms {
     targetPlatforms 'java7', 'java8', 'java9'
+    // you can override the path to JDKs using this property
+    // jdks.java7 = '/opt/jdk1.7.0_51'
 }
 
 project.afterEvaluate {

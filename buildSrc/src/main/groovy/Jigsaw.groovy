@@ -9,11 +9,11 @@ import org.gradle.jvm.tasks.api.ApiJar
 @CompileStatic
 class Jigsaw implements Plugin<Project> {
     void apply(Project project) {
-        ApiExtension extension = (ApiExtension) project.extensions.create("api", ApiExtension)
-        PlatformsExtension platforms = (PlatformsExtension) project.extensions.create("platforms", PlatformsExtension)
+        ApiExtension apiExtension = (ApiExtension) project.extensions.create("api", ApiExtension)
+        PlatformsExtension platformsExtension = (PlatformsExtension) project.extensions.create("platforms", PlatformsExtension)
 
         project.afterEvaluate {
-            List<String> targetPlatforms = platforms.targetPlatforms as List
+            List<String> targetPlatforms = platformsExtension.targetPlatforms as List
             if (!targetPlatforms) {
                 targetPlatforms << 'java7'
             }
@@ -31,7 +31,8 @@ class Jigsaw implements Plugin<Project> {
                         void execute(final JavaCompile task) {
                             task.options.fork = true
                             def level = "1.${platform - 'java'}"
-                            task.options.forkOptions.executable = "/opt/jdk${level}.0/bin/javac"
+                            String jdkHome = platformsExtension.jdks[platform]?:"/opt/jdk${level}.0"
+                            task.options.forkOptions.executable = "$jdkHome/bin/javac"
                             task.sourceCompatibility = level
                             task.targetCompatibility = level
                             task.source = compileTask.source
@@ -42,7 +43,7 @@ class Jigsaw implements Plugin<Project> {
                     def apiJar = project.tasks.create("${taskName}ApiJar", ApiJar, { ApiJar apiJar ->
                         apiJar.outputFile = project.file("$project.buildDir/api/${project.name}-${taskName}.jar")
                         apiJar.inputs.dir(platformCompile.destinationDir).skipWhenEmpty()
-                        apiJar.exportedPackages = extension.exports
+                        apiJar.exportedPackages = apiExtension.exports
                         apiJar.dependsOn(platformCompile)
                     } as Action)
                     project.artifacts.add(compilePlatformConfiguration.name, [file: apiJar.outputFile, builtBy: apiJar])
@@ -57,8 +58,8 @@ class Jigsaw implements Plugin<Project> {
                         project.tasks.getByName('build').dependsOn jar
                     }
 
-                    if (platform=='java9' && extension.moduleName) {
-                        addJigsawModuleFile(project, taskName, platformCompile, extension)
+                    if (platform=='java9' && apiExtension.moduleName) {
+                        addJigsawModuleFile(project, taskName, platformCompile, apiExtension)
                     }
                 }
             }
