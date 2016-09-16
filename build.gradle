@@ -1,7 +1,7 @@
 subprojects {
     apply plugin: 'java'
     if (name != 'someLib') {
-        apply plugin: CompileAvoidance
+        apply plugin: Jigsaw
     }
 }
 

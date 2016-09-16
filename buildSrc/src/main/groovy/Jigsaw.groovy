@@ -7,7 +7,7 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.api.ApiJar
 
 @CompileStatic
-class CompileAvoidance implements Plugin<Project> {
+class Jigsaw implements Plugin<Project> {
     void apply(Project project) {
         ApiExtension extension = (ApiExtension) project.extensions.create("api", ApiExtension)
         PlatformsExtension platforms = (PlatformsExtension) project.extensions.create("platforms", PlatformsExtension)
