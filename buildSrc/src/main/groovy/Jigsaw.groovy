@@ -31,7 +31,7 @@ class Jigsaw implements Plugin<Project> {
                         void execute(final JavaCompile task) {
                             task.options.fork = true
                             def level = "1.${platform - 'java'}"
-                            String jdkHome = platformsExtension.jdks[platform]?:"/opt/jdk${level}.0"
+                            String jdkHome = platformsExtension.jdkFor(platform)
                             task.options.forkOptions.executable = "$jdkHome/bin/javac"
                             task.sourceCompatibility = level
                             task.targetCompatibility = level

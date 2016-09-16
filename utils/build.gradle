@@ -24,5 +24,13 @@ project.afterEvaluate {
 
         manifest.attributes('Multi-Release': 'true')
     }
+
+    platforms.targetPlatforms.each { platform ->
+        task "${platform}Run"(type: JavaExec) {
+            classpath = files(multireleaseJar.archivePath)
+            executable = "${platforms.jdkFor(platform)}/bin/java"
+            main = 'com.acme.utils.Main'
+        }
+    }
 }
 
