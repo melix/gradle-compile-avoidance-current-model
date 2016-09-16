@@ -7,3 +7,7 @@ dependencies {
     compile project(':someLib')
     compile 'org.apache.commons:commons-lang3:3.4'
 }
+
+platforms {
+    targetPlatforms 'java7', 'java8'
+}
