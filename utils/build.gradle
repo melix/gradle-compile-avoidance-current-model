@@ -6,3 +6,7 @@ api {
 platforms {
     targetPlatforms 'java7', 'java8', 'java9'
 }
+
+project.afterEvaluate {
+    compileJavaJava9.source(file('src/main/java9'))
+}
