@@ -1,10 +1,12 @@
+import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.jvm.tasks.api.ApiJar
-//@CompileStatic
+
+@CompileStatic
 class CompileAvoidance implements Plugin<Project> {
     void apply(Project project) {
         ApiExtension extension = (ApiExtension) project.extensions.create("api", ApiExtension)
