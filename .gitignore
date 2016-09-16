@@ -1,0 +1,14 @@
+build
+out
+*.DS_Store
+*~
+.gradle
+*.iml
+*.ipr
+*.iws
+.idea
+.*.swp
+*.class
+.settings/
+.classpath
+.project
