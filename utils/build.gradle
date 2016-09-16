@@ -27,6 +27,7 @@ project.afterEvaluate {
 
     platforms.targetPlatforms.each { platform ->
         task "${platform}Run"(type: JavaExec) {
+            dependsOn multireleaseJar
             classpath = files(multireleaseJar.archivePath)
             executable = "${platforms.jdkFor(platform)}/bin/java"
             main = 'com.acme.utils.Main'
