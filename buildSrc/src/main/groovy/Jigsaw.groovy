@@ -5,7 +5,9 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.javadoc.Javadoc
 import org.gradle.jvm.tasks.api.ApiJar
+import org.gradle.external.javadoc.CoreJavadocOptions
 
 @CompileStatic
 class Jigsaw implements Plugin<Project> {
@@ -80,8 +82,17 @@ class Jigsaw implements Plugin<Project> {
                 project.artifacts.add(runtimePlatformConfiguration.name, [file: jar.archivePath, builtBy: jar])
             }
 
+            def javadocTask = project.tasks.findByName('javadoc')
+            def platformJavadoc = project.tasks.create("${platform}Javadoc", Javadoc) { Javadoc javadoc ->
+              javadoc.source = platformCompile.source
+              javadoc.classpath = platformCompile.classpath
+              javadoc.executable = "${getPlatformsExtension().jdkFor(platform)}/bin/javadoc"
+              javadoc.destinationDir = project.file("${project.buildDir}/docs/${platform}Javadoc")
+            }
+
             if (platform=='java9' && apiExtension.moduleName) {
                 addJigsawModuleFile(taskName, platformCompile, apiExtension)
+                ((CoreJavadocOptions)platformJavadoc.options).addStringOption('-html5')
             }
         }
 
@@ -95,12 +106,12 @@ class Jigsaw implements Plugin<Project> {
                 def requires = project.configurations.getByName('compile').files.collect { "   requires ${automaticModule(it.name)};" }.join('\n')
                 def exports = extension.exports.collect { "    exports $it;" }.join('\n')
                 new File(genDir, 'module-info.java').write("""module ${extension.moduleName} {
-${requires}                
+${requires}
 ${exports}
 }""")
             }
         }
-        
+
         private static String automaticModule(String name) {
              int idx = name.lastIndexOf('-');
              if (idx>0) { name = name.substring(0,idx) }
