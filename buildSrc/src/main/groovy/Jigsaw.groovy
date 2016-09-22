@@ -3,11 +3,12 @@ import org.gradle.api.Action
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.javadoc.Javadoc
-import org.gradle.jvm.tasks.api.ApiJar
 import org.gradle.external.javadoc.CoreJavadocOptions
+import org.gradle.jvm.tasks.api.ApiJar
 
 @CompileStatic
 class Jigsaw implements Plugin<Project> {
@@ -49,15 +50,80 @@ class Jigsaw implements Plugin<Project> {
             def capitalizedPlatform = platform.capitalize()
             def compileConfiguration = project.configurations.getByName('compile')
             def taskName = "${compileTask.name}$capitalizedPlatform"
-            def compilePlatformConfiguration = project.configurations.findByName("compileClasspath${ capitalizedPlatform}")?:project.configurations.create("compileClasspath${capitalizedPlatform}")
-            compilePlatformConfiguration.attributes(type: 'api', platform: platform)
-            compilePlatformConfiguration.extendsFrom compileConfiguration
-            def runtimePlatformConfiguration = project.configurations.findByName("runtime${capitalizedPlatform}")?:project.configurations.create("runtime${capitalizedPlatform}")
-            runtimePlatformConfiguration.attributes(type: 'runtime', platform: platform)
-            runtimePlatformConfiguration.extendsFrom compileConfiguration
+            Configuration compilePlatformConfiguration = compileClasspathConfiguration(capitalizedPlatform, platform, compileConfiguration)
+            Configuration runtimePlatformConfiguration = runtimeClasspathConfiguration(capitalizedPlatform, platform, compileConfiguration)
             // for each platform we're creating a new JavaCompile task which is going to fork and use
             // the specified JDK
-            def platformCompile = project.tasks.create(taskName, JavaCompile, new Action<JavaCompile>() {
+            def platformCompile = createPlatformCompileTask(taskName, platform, compileTask, compilePlatformConfiguration)
+            // in addition we create an API jar task, and we use it as the artifact attached to the "api" configuration
+            def apiJar = createApiJarTask(taskName, platformCompile)
+            project.artifacts.add(compilePlatformConfiguration.name, [file: apiJar.outputFile, builtBy: apiJar])
+
+            // we also need to create "jar" for each platform
+            def jar = createPlatformJarTask(platform, platformCompile)
+            project.tasks.getByName('build').dependsOn jar
+            project.artifacts.add(runtimePlatformConfiguration.name, [file: jar.archivePath, builtBy: jar])
+
+            // and a Javadoc task
+            def platformJavadoc = createPlatformJavadocTask(platform, platformCompile)
+
+            if (platform == 'java9') {
+                configureJava9(taskName, platformCompile, platformJavadoc)
+            }
+        }
+
+        private void configureJava9(String taskName, JavaCompile platformCompile, Javadoc platformJavadoc) {
+            if (apiExtension.moduleName) {
+                // if the target platform is Java 9 and that we defined a module name in the `api` extension
+                // then we're asking Gradle to generate a module file for us
+                addJigsawModuleFile(taskName, platformCompile, apiExtension)
+            }
+            ((CoreJavadocOptions) platformJavadoc.options).addStringOption('-html5')
+        }
+
+        private Configuration runtimeClasspathConfiguration(String capitalizedPlatform, String platform, Configuration compileConfiguration) {
+            def runtimePlatformConfiguration = project.configurations.findByName("runtime${capitalizedPlatform}") ?: project.configurations.create("runtime${capitalizedPlatform}")
+            runtimePlatformConfiguration.attributes(type: 'runtime', platform: platform)
+            runtimePlatformConfiguration.extendsFrom compileConfiguration
+            runtimePlatformConfiguration
+        }
+
+        private Configuration compileClasspathConfiguration(String capitalizedPlatform, String platform, Configuration compileConfiguration) {
+            def compilePlatformConfiguration = project.configurations.findByName("compileClasspath${capitalizedPlatform}") ?: project.configurations.create("compileClasspath${capitalizedPlatform}")
+            compilePlatformConfiguration.attributes(type: 'api', platform: platform)
+            compilePlatformConfiguration.extendsFrom compileConfiguration
+            compilePlatformConfiguration
+        }
+
+        private Javadoc createPlatformJavadocTask(String platform, JavaCompile platformCompile) {
+            project.tasks.create("${platform}Javadoc", Javadoc) { Javadoc javadoc ->
+                javadoc.source = platformCompile.source
+                javadoc.classpath = platformCompile.classpath
+                javadoc.executable = "${getPlatformsExtension().jdkFor(platform)}/bin/javadoc"
+                javadoc.destinationDir = project.file("${project.buildDir}/docs/${platform}Javadoc")
+            }
+        }
+
+        private Jar createPlatformJarTask(String platform, JavaCompile platformCompile) {
+            project.tasks.create("${platform}Jar", Jar) { Jar jar ->
+                jar.from project.files(platformCompile.destinationDir)
+                jar.destinationDir = project.file("$project.buildDir/libs")
+                jar.classifier = platform
+                jar.dependsOn(platformCompile)
+            }
+        }
+
+        private ApiJar createApiJarTask(String taskName, JavaCompile platformCompile) {
+            project.tasks.create("${taskName}ApiJar", ApiJar, { ApiJar apiJar ->
+                apiJar.outputFile = project.file("$project.buildDir/api/${project.name}-${taskName}.jar")
+                apiJar.inputs.dir(platformCompile.destinationDir).skipWhenEmpty()
+                apiJar.exportedPackages = apiExtension.exports
+                apiJar.dependsOn(platformCompile)
+            } as Action)
+        }
+
+        private JavaCompile createPlatformCompileTask(GString taskName, String platform, JavaCompile compileTask, Configuration compilePlatformConfiguration) {
+            project.tasks.create(taskName, JavaCompile, new Action<JavaCompile>() {
                 @Override
                 void execute(final JavaCompile task) {
                     task.options.fork = true
@@ -74,42 +140,6 @@ class Jigsaw implements Plugin<Project> {
                     task.classpath = compilePlatformConfiguration
                 }
             })
-            // in addition we create an API jar task, and we use it as the artifact attached to the "api" configuration
-            def apiJar = project.tasks.create("${taskName}ApiJar", ApiJar, { ApiJar apiJar ->
-                apiJar.outputFile = project.file("$project.buildDir/api/${project.name}-${taskName}.jar")
-                apiJar.inputs.dir(platformCompile.destinationDir).skipWhenEmpty()
-                apiJar.exportedPackages = apiExtension.exports
-                apiJar.dependsOn(platformCompile)
-            } as Action)
-            project.artifacts.add(compilePlatformConfiguration.name, [file: apiJar.outputFile, builtBy: apiJar])
-
-            if (!compileTask.name.contains('Test')) {
-                // we also need to create "jar" for each platform
-                def jar = project.tasks.create("${platform}Jar", Jar) { Jar jar ->
-                    jar.from project.files(platformCompile.destinationDir)
-                    jar.destinationDir = project.file("$project.buildDir/libs")
-                    jar.classifier = platform
-                    jar.dependsOn(platformCompile)
-                }
-                project.tasks.getByName('build').dependsOn jar
-                project.artifacts.add(runtimePlatformConfiguration.name, [file: jar.archivePath, builtBy: jar])
-            }
-
-            // and a Javadoc task
-            def javadocTask = project.tasks.findByName('javadoc')
-            def platformJavadoc = project.tasks.create("${platform}Javadoc", Javadoc) { Javadoc javadoc ->
-              javadoc.source = platformCompile.source
-              javadoc.classpath = platformCompile.classpath
-              javadoc.executable = "${getPlatformsExtension().jdkFor(platform)}/bin/javadoc"
-              javadoc.destinationDir = project.file("${project.buildDir}/docs/${platform}Javadoc")
-            }
-
-            if (platform=='java9' && apiExtension.moduleName) {
-                // if the target platform is Java 9 and that we defined a module name in the `api` extension
-                // then we're asking Gradle to generate a module file for us
-                addJigsawModuleFile(taskName, platformCompile, apiExtension)
-                ((CoreJavadocOptions)platformJavadoc.options).addStringOption('-html5')
-            }
         }
 
         private void addJigsawModuleFile(String taskName, JavaCompile platformCompile, ApiExtension extension) {
@@ -124,7 +154,9 @@ class Jigsaw implements Plugin<Project> {
             platformCompile.doFirst {
                 // here is the module file generation
                 genDir.mkdirs()
-                def requires = project.configurations.getByName('compile').files.collect { "   requires ${automaticModule(it.name)};" }.join('\n')
+                def requires = project.configurations.getByName('compile').files.collect {
+                    "   requires ${automaticModule(it.name)};"
+                }.join('\n')
                 def exports = extension.exports.collect { "    exports $it;" }.join('\n')
                 new File(genDir, 'module-info.java').write("""module ${extension.moduleName} {
 ${requires}
@@ -142,9 +174,11 @@ ${exports}
          * it's not a module, we need to infer the module name from the filename.
          */
         private static String automaticModule(String name) {
-             int idx = name.lastIndexOf('-');
-             if (idx>0) { name = name.substring(0,idx) }
-             name.replace('-', '.')
+            int idx = name.lastIndexOf('-');
+            if (idx > 0) {
+                name = name.substring(0, idx)
+            }
+            name.replace('-', '.')
         }
     }
 
