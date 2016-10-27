@@ -1,4 +1,3 @@
-include 'core'
-include 'utils'
-include 'someLib'
+includeBuild 'plugin'
+includeBuild 'demo'
 

@@ -1,12 +1,14 @@
+package me.champeau.gradle.ca
+
 import groovy.transform.CompileStatic
 
 @CompileStatic
 class PlatformsExtension {
-    final Jigsaw.Configurer configurer
+    final CompileAvoidance.Configurer configurer
     final Set<String> targetPlatforms = []
     final Map<String, String> jdks = [:]
 
-    PlatformsExtension(Jigsaw.Configurer configurer) {
+    PlatformsExtension(CompileAvoidance.Configurer configurer) {
         this.configurer = configurer
     }
 

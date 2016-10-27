@@ -1,0 +1,21 @@
+buildscript {
+    dependencies {
+        classpath 'me.champeau.gradle:compile-avoidance-plugin:1.0.0'
+    }
+}
+
+import me.champeau.gradle.ca.CompileAvoidance
+
+group = 'me.champeau.gradle'
+version = '1.0.0-SNAPSHOT'
+
+subprojects {
+    apply plugin: 'java'
+    if (name != 'someLib') {
+        apply plugin: CompileAvoidance
+    }
+}
+
+allprojects {
+    apply plugin: 'idea'
+}

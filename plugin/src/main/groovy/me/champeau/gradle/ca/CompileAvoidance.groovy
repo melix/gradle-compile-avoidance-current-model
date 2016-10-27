@@ -1,3 +1,5 @@
+package me.champeau.gradle.ca
+
 import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.JavaVersion
@@ -11,7 +13,7 @@ import org.gradle.external.javadoc.CoreJavadocOptions
 import org.gradle.jvm.tasks.api.ApiJar
 
 @CompileStatic
-class Jigsaw implements Plugin<Project> {
+class CompileAvoidance implements Plugin<Project> {
 
     void apply(Project project) {
         ApiExtension apiExtension = (ApiExtension) project.extensions.create("api", ApiExtension)

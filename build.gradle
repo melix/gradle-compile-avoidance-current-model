@@ -1,7 +1,5 @@
-subprojects {
-    apply plugin: 'java'
-    if (name != 'someLib') {
-        apply plugin: Jigsaw
-    }
-}
+apply plugin: 'idea'
 
+task build {
+   dependsOn gradle.includedBuild('demo').task(':core:build')
+}

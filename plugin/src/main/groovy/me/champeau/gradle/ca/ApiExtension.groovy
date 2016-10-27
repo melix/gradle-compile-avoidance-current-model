@@ -1,3 +1,5 @@
+package me.champeau.gradle.ca
+
 import groovy.transform.CompileStatic
 
 @CompileStatic
