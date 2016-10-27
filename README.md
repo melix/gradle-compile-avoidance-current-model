@@ -124,10 +124,10 @@ warning: [options] bootstrap class path not set in conjunction with -source 1.7
 :demo:someLib:classes
 :demo:someLib:jar
 :demo:utils:compileJava7
-Compile classpath for :utils (java7): /home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/home/cchampeau/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.5/6c6c702c89bfff3cd9e80b04d668c5e190d588c6/commons-lang3-3.5.jar
+Compile classpath for :utils (java7): gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.5/6c6c702c89bfff3cd9e80b04d668c5e190d588c6/commons-lang3-3.5.jar
 :demo:utils:compileJava7ApiJar
 :demo:core:compileJava7
-Compile classpath for :core (java7): /home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/utils/build/api/utils-compileJava7.jar:/home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar
+Compile classpath for :core (java7): gradle-compile-avoidance-current-model/demo/utils/build/api/utils-compileJava7.jar:gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar
 :compileJava7
 ```
 
@@ -159,7 +159,7 @@ $ gradle compileJava7
 :demo:someLib:classes UP-TO-DATE
 :demo:someLib:jar UP-TO-DATE
 :demo:utils:compileJava7
-Compile classpath for :utils (java7): /home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/home/cchampeau/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.4/5fe28b9518e58819180a43a850fbc0dd24b7c050/commons-lang3-3.4.jar
+Compile classpath for :utils (java7): gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.4/5fe28b9518e58819180a43a850fbc0dd24b7c050/commons-lang3-3.4.jar
 :demo:utils:compileJava7ApiJar UP-TO-DATE
 :demo:core:compileJava7 UP-TO-DATE
 :compileJava7
@@ -193,7 +193,7 @@ $ gradle compileJava7
 :demo:someLib:classes UP-TO-DATE
 :demo:someLib:jar UP-TO-DATE
 :demo:utils:compileJava7
-Compile classpath for :utils (java7): /home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/home/cchampeau/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.4/5fe28b9518e58819180a43a850fbc0dd24b7c050/commons-lang3-3.4.jar
+Compile classpath for :utils (java7): gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.4/5fe28b9518e58819180a43a850fbc0dd24b7c050/commons-lang3-3.4.jar
 :demo:utils:compileJava7ApiJar
 :demo:core:compileJava7 UP-TO-DATE
 :compileJava7
@@ -226,7 +226,7 @@ $ gradle compileJava7
 :demo:someLib:classes UP-TO-DATE
 :demo:someLib:jar UP-TO-DATE
 :demo:utils:compileJava7
-Compile classpath for :utils (java7): /home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/home/cchampeau/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.4/5fe28b9518e58819180a43a850fbc0dd24b7c050/commons-lang3-3.4.jar
+Compile classpath for :utils (java7): gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.4/5fe28b9518e58819180a43a850fbc0dd24b7c050/commons-lang3-3.4.jar
 :demo:utils:compileJava7ApiJar
 :demo:core:compileJava7 UP-TO-DATE
 :compileJava7
@@ -238,6 +238,38 @@ need to recompile `core`!
 Conclusion: Changing the implementation of a public method of an exported API class doesn't trigger recompilation of downstream dependencies.
 
 Of course, same is valid for private, protected members of an API class: downstream dependencies wouldn't be recompiled.
+
+# Platform specific dependencies
+
+In addition to the `api` and `compile` configurations, the plugin defines configurations which are specific to a platform.
+For example, it is possible to add dependencies specifically to the Java 7 variant of the component, either as an API
+dependency or compile dependency:
+
+```
+dependencies {
+   apiJava7 'commons-io:commons-io:2.1'
+   apiJava8 'commons-io:commons-io:2.5'
+   
+   compileJava7 'org.apache.commons:commons-collections3:3.1'
+   compileJava8 'org.apache.commons:commons-collections4:4.1'
+}
+```
+
+Which would show up as:
+
+```
+:demo:utils:compileJava7
+Compile classpath for :utils (java7): gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.5/6c6c702c89bfff3cd9e80b04d668c5e190d588c6/commons-lang3-3.5.jar
+:demo:utils:compileJava7ApiJar UP-TO-DATE
+:demo:core:compileJava7
+Compile classpath for :core (java7): /commons-io/commons-io/2.1/fd51f906669f49a4ffd06650666c3b8147a6106e/commons-io-2.1.jar:gradle-compile-avoidance-current-model/demo/utils/build/api/utils-compileJava7.jar:/org.apache.commons/commons-collections4/4.0/da217367fd25e88df52ba79e47658d4cf928b0d1/commons-collections4-4.0.jar:gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar
+:demo:core:java7Jar UP-TO-DATE
+:demo:utils:compileJava8
+Compile classpath for :utils (java8): gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.5/6c6c702c89bfff3cd9e80b04d668c5e190d588c6/commons-lang3-3.5.jar
+:demo:utils:compileJava8ApiJar UP-TO-DATE
+:demo:core:compileJava8
+Compile classpath for :core (java8): /commons-io/commons-io/2.5/2852e6e05fbb95076fc091f6d1780f1f8fe35e0f/commons-io-2.5.jar:gradle-compile-avoidance-current-model/demo/utils/build/api/utils-compileJava8.jar:/org.apache.commons/commons-collections4/4.1/a4cf4688fe1c7e3a63aa636cc96d013af537768e/commons-collections4-4.1.jar:gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar
+```
 
 # Experimental support for Jigsaw
 
@@ -274,7 +306,7 @@ then calling: `gradle java9Jar` will show:
 :demo:utils:classes UP-TO-DATE
 :demo:utils:jar UP-TO-DATE
 :demo:core:compileJava9
-Compile classpath for :core (java9): /home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/utils/build/libs/utils.jar:/home/cchampeau/DEV/PROJECTS/GITHUB/gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/home/cchampeau/.gradle/caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.5/6c6c702c89bfff3cd9e80b04d668c5e190d588c6/commons-lang3-3.5.jar
+Compile classpath for :core (java9): gradle-compile-avoidance-current-model/demo/utils/build/libs/utils.jar:gradle-compile-avoidance-current-model/demo/someLib/build/libs/someLib.jar:/org.apache.commons/commons-lang3/3.5/6c6c702c89bfff3cd9e80b04d668c5e190d588c6/commons-lang3-3.5.jar
 :demo:core:java9Jar UP-TO-DATE
 :java9Jar
 ```

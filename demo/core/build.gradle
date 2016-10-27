@@ -6,6 +6,7 @@ dependencies {
     compile project(':utils')
 }
 
+
 api {
     moduleName = 'core'
     exports 'com.acme'
@@ -13,6 +14,14 @@ api {
 
 platforms {
     targetPlatforms 'java7', 'java8', 'java9'
+}
+
+dependencies {
+    apiJava7 'commons-io:commons-io:2.1'
+    apiJava8 'commons-io:commons-io:2.5'
+
+    compileJava7 'org.apache.commons:commons-collections4:4.0'
+    compileJava8 'org.apache.commons:commons-collections4:4.1'
 }
 
 task multireleaseJar(type:Jar) {

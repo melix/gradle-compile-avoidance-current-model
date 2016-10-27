@@ -61,9 +61,18 @@ class CompileAvoidance implements Plugin<Project> {
             // should really be a bucket too, but it causes issues with IDEA plugin
             //compileConfiguration.asBucket()
 
-            Configuration compileClasspathConfiguration = this.compileClasspathConfiguration("compileClasspath${capitalizedPlatform}", platform, compileConfiguration, true)
-            Configuration apiCompileConfiguration = this.compileClasspathConfiguration("apiCompile${capitalizedPlatform}", platform, apiConfiguration, false)
-            Configuration runtimePlatformConfiguration = runtimeClasspathConfiguration(capitalizedPlatform, platform, compileConfiguration)
+            // Configurations for platform specific dependencies
+            def platformApiConfiguration = project.configurations.create("api${capitalizedPlatform}")
+            platformApiConfiguration.asBucket()
+            platformApiConfiguration.extendsFrom(apiConfiguration)
+            def platformCompileConfiguration = project.configurations.create("compile${capitalizedPlatform}")
+            platformCompileConfiguration.asBucket()
+            platformCompileConfiguration.extendsFrom(platformApiConfiguration)
+            platformCompileConfiguration.extendsFrom(compileConfiguration)
+
+            Configuration compileClasspathConfiguration = this.compileClasspathConfiguration("compileClasspath${capitalizedPlatform}", platform, platformCompileConfiguration, true)
+            Configuration apiCompileConfiguration = this.compileClasspathConfiguration("apiCompile${capitalizedPlatform}", platform, platformApiConfiguration, false)
+            Configuration runtimePlatformConfiguration = runtimeClasspathConfiguration(capitalizedPlatform, platform, platformCompileConfiguration)
 
             def taskName = "${compileTask.name - 'Java'}$capitalizedPlatform"
             // for each platform we're creating a new JavaCompile task which is going to fork and use
