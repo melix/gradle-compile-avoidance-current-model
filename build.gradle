@@ -8,7 +8,8 @@ task clean {
    dependsOn gradle.includedBuilds*.task(':clean')
 }
 
-['run', 'java7Run', 'java8Run', 'java9Run'].each { taskName ->
+['run', 'java7Run', 'java8Run', 'java9Run', 'compileJava7', 'compileJava8', 'compileJava9',
+ 'java7Jar', 'java8Jar', 'java9Jar'].each { taskName ->
    task(taskName) {
       dependsOn gradle.includedBuild('demo').task(":core:$taskName")
    }

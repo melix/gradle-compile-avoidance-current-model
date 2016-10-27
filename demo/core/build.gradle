@@ -6,16 +6,21 @@ dependencies {
     compile project(':utils')
 }
 
+api {
+    moduleName = 'core'
+    exports 'com.acme'
+}
+
 platforms {
     targetPlatforms 'java7', 'java8', 'java9'
 }
 
 task multireleaseJar(type:Jar) {
-    dependsOn compileJavaJava7, compileJavaJava9
+    dependsOn compileJava7, compileJava9
     baseName = "${project.name}-multi"
-    from compileJavaJava7.destinationDir
+    from compileJava7.destinationDir
     into('META-INF/versions/9') {
-        from compileJavaJava9.destinationDir
+        from compileJava9.destinationDir
     }
 
     manifest.attributes('Multi-Release': 'true')

@@ -65,7 +65,7 @@ class CompileAvoidance implements Plugin<Project> {
             Configuration apiCompileConfiguration = this.compileClasspathConfiguration("apiCompile${capitalizedPlatform}", platform, apiConfiguration, false)
             Configuration runtimePlatformConfiguration = runtimeClasspathConfiguration(capitalizedPlatform, platform, compileConfiguration)
 
-            def taskName = "${compileTask.name}$capitalizedPlatform"
+            def taskName = "${compileTask.name - 'Java'}$capitalizedPlatform"
             // for each platform we're creating a new JavaCompile task which is going to fork and use
             // the specified JDK
             def platformCompile = createPlatformCompileTask(taskName, platform, compileTask, compileClasspathConfiguration)
@@ -179,7 +179,7 @@ class CompileAvoidance implements Plugin<Project> {
             platformCompile.doFirst {
                 // here is the module file generation
                 genDir.mkdirs()
-                def tmpConf = project.configurations.getByName('apiCompileJava9').copy()
+                def tmpConf = project.configurations.getByName('compile').copy()
                 tmpConf.forQueryingOrResolvingOnly()
                 def requires = tmpConf.files.collect {
                     "   requires ${automaticModule(it.name)};"
@@ -205,7 +205,7 @@ ${exports}
             if (idx > 0) {
                 name = name.substring(0, idx)
             }
-            name.replace('-', '.')
+            name.replace('-', '.') - '.jar'
         }
     }
 
