@@ -13,11 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.acme.utils;
+package com.acme.someLib;
 
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Java 9 specific version");
-        System.out.println("Your pid is " + ProcessHandle.current().getPid());
-    }
+public interface Function<F, T> {
+    T apply(F from);
 }

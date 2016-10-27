@@ -5,6 +5,7 @@ import org.gradle.api.Action
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.JavaCompile
@@ -17,10 +18,14 @@ class CompileAvoidance implements Plugin<Project> {
 
     void apply(Project project) {
         ApiExtension apiExtension = (ApiExtension) project.extensions.create("api", ApiExtension)
+        def apiConfiguration = project.configurations.create("api")
+        apiConfiguration.transitive = false
+        apiConfiguration.asBucket()
         def configurer = new Configurer(project)
         PlatformsExtension platformsExtension = (PlatformsExtension) project.extensions.create("platforms", PlatformsExtension, configurer)
         // This shouldn't probably be done automatically, it's for demo time
         platformsExtension.targetPlatforms("java${JavaVersion.current().majorVersion}".toString())
+
     }
 
     /**
@@ -50,16 +55,23 @@ class CompileAvoidance implements Plugin<Project> {
 
         private void doConfigurePlatform(JavaCompile compileTask, String platform) {
             def capitalizedPlatform = platform.capitalize()
+            def apiConfiguration = project.configurations.getByName('api')
             def compileConfiguration = project.configurations.getByName('compile')
-            def taskName = "${compileTask.name}$capitalizedPlatform"
-            Configuration compilePlatformConfiguration = compileClasspathConfiguration(capitalizedPlatform, platform, compileConfiguration)
+            compileConfiguration.extendsFrom apiConfiguration
+            // should really be a bucket too, but it causes issues with IDEA plugin
+            //compileConfiguration.asBucket()
+
+            Configuration compileClasspathConfiguration = this.compileClasspathConfiguration("compileClasspath${capitalizedPlatform}", platform, compileConfiguration, true)
+            Configuration apiCompileConfiguration = this.compileClasspathConfiguration("apiCompile${capitalizedPlatform}", platform, apiConfiguration, false)
             Configuration runtimePlatformConfiguration = runtimeClasspathConfiguration(capitalizedPlatform, platform, compileConfiguration)
+
+            def taskName = "${compileTask.name}$capitalizedPlatform"
             // for each platform we're creating a new JavaCompile task which is going to fork and use
             // the specified JDK
-            def platformCompile = createPlatformCompileTask(taskName, platform, compileTask, compilePlatformConfiguration)
+            def platformCompile = createPlatformCompileTask(taskName, platform, compileTask, compileClasspathConfiguration)
             // in addition we create an API jar task, and we use it as the artifact attached to the "api" configuration
             def apiJar = createApiJarTask(taskName, platformCompile)
-            project.artifacts.add(compilePlatformConfiguration.name, [file: apiJar.outputFile, builtBy: apiJar])
+            project.artifacts.add(apiCompileConfiguration.name, [file: apiJar.outputFile, builtBy: apiJar])
 
             // we also need to create "jar" for each platform
             def jar = createPlatformJarTask(platform, platformCompile)
@@ -90,10 +102,15 @@ class CompileAvoidance implements Plugin<Project> {
             runtimePlatformConfiguration
         }
 
-        private Configuration compileClasspathConfiguration(String capitalizedPlatform, String platform, Configuration compileConfiguration) {
-            def compilePlatformConfiguration = project.configurations.findByName("compileClasspath${capitalizedPlatform}") ?: project.configurations.create("compileClasspath${capitalizedPlatform}")
+        private Configuration compileClasspathConfiguration(String configName, String platform, Configuration parentConfiguration, boolean query) {
+            def compilePlatformConfiguration = project.configurations.findByName(configName) ?: project.configurations.create(configName)
             compilePlatformConfiguration.attributes(type: 'api', platform: platform)
-            compilePlatformConfiguration.extendsFrom compileConfiguration
+            compilePlatformConfiguration.extendsFrom parentConfiguration
+            if (query) {
+                compilePlatformConfiguration.forQueryingOrResolvingOnly()
+            } else {
+                compilePlatformConfiguration.forConsumingOrPublishingOnly()
+            }
             compilePlatformConfiguration
         }
 
@@ -140,13 +157,19 @@ class CompileAvoidance implements Plugin<Project> {
                     task.source(project.file("src/main/$platform"))
                     task.destinationDir = project.file("$project.buildDir/classes/$platform/$taskName")
                     task.classpath = compilePlatformConfiguration
+                    task.doFirst(new Action<Task>() {
+                        @Override
+                        void execute(final Task t) {
+                            project.logger.lifecycle "Compile classpath for ${project.path} (${platform}): ${((JavaCompile)t).classpath.asPath}"
+                        }
+                    })
                 }
             })
         }
 
         private void addJigsawModuleFile(String taskName, JavaCompile platformCompile, ApiExtension extension) {
             // first let's define an additional generated sources directory where to put the module descriptor
-            def genDir = new File("$project.buildDir/generates-sources/${taskName}/src/main/jigsaw")
+            def genDir = new File("$project.buildDir/generated-sources/${taskName}/src/main/jigsaw")
             platformCompile.source(project.files(genDir))
             platformCompile.inputs.properties(exports: extension.exports)
             // as soon as `module-info.java` is on compile classpath, `modulepath` has to be used: even if jars are
@@ -156,7 +179,9 @@ class CompileAvoidance implements Plugin<Project> {
             platformCompile.doFirst {
                 // here is the module file generation
                 genDir.mkdirs()
-                def requires = project.configurations.getByName('compile').files.collect {
+                def tmpConf = project.configurations.getByName('apiCompileJava9').copy()
+                tmpConf.forQueryingOrResolvingOnly()
+                def requires = tmpConf.files.collect {
                     "   requires ${automaticModule(it.name)};"
                 }.join('\n')
                 def exports = extension.exports.collect { "    exports $it;" }.join('\n')

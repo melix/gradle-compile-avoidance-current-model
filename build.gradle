@@ -3,3 +3,14 @@ apply plugin: 'idea'
 task build {
    dependsOn gradle.includedBuild('demo').task(':core:build')
 }
+
+task clean {
+   dependsOn gradle.includedBuilds*.task(':clean')
+}
+
+['run', 'java7Run', 'java8Run', 'java9Run'].each { taskName ->
+   task(taskName) {
+      dependsOn gradle.includedBuild('demo').task(":core:$taskName")
+   }
+}
+

@@ -15,12 +15,17 @@
  */
 package com.acme;
 
-import com.acme.someLib.Hello;
+import com.acme.someLib.Function;
 import com.acme.utils.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("result = " + StringUtils.encode(new Hello().toString()) + NumberUtils.BYTE_MINUS_ONE);
+        Function<String, String> encoder = new Function<String, String>() {
+            @Override
+            public String apply(final String from) {
+                return "Hello " + from;
+            }
+        };
+        System.out.println("result = " + StringUtils.encode(encoder, args[0]));
     }
 }

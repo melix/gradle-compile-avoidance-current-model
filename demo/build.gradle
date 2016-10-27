@@ -19,3 +19,8 @@ subprojects {
 allprojects {
     apply plugin: 'idea'
 }
+
+task clean {
+  dependsOn subprojects*.clean
+}
+

@@ -15,8 +15,12 @@
  */
 package com.acme.utils.internal;
 
-public class StringInternal {
-    public static String encode(String str) {
-        return "X" + str.toUpperCase();
+import com.acme.someLib.Function;
+import org.apache.commons.lang3.StringUtils;
+
+public class StringInternal implements Function<String, String> {
+    @Override
+    public String apply(final String from) {
+        return StringUtils.capitalize(from);
     }
 }

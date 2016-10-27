@@ -3,31 +3,21 @@ api {
     exports 'com.acme.utils'
 }
 
+repositories {
+    jcenter()
+}
+
+dependencies {
+    // API dependencies are exported
+    api project(':someLib')
+
+    // compile dependencies are internal
+    compile 'org.apache.commons:commons-lang3:3.5'
+}
+
 platforms {
-    targetPlatforms 'java7', 'java8', 'java9'
+    targetPlatforms 'java7', 'java8'
     // you can override the path to JDKs using this property
     // jdks.java7 = '/opt/jdk1.7.0_51'
 }
-
-
-task multireleaseJar(type:Jar) {
-   dependsOn compileJavaJava7, compileJavaJava9
-   baseName = "${project.name}-multi"
-   from compileJavaJava7.destinationDir
-   into('META-INF/versions/9') {
-      from compileJavaJava9.destinationDir
-   }
-
-   manifest.attributes('Multi-Release': 'true')
-}
-
-platforms.targetPlatforms.each { platform ->
-    task "${platform}Run"(type: JavaExec) {
-       dependsOn multireleaseJar
-       classpath = files(multireleaseJar.archivePath)
-       executable = "${platforms.jdkFor(platform)}/bin/java"
-       main = 'com.acme.utils.Main'
-    }
-}
-
 
