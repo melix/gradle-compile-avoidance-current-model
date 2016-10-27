@@ -58,7 +58,7 @@ the `compile` configuration:
 
 ```
 dependencies {
-   api 'com.bar:bar:1.0'
+   compile 'com.bar:bar:1.0'
 }
 ```
 
