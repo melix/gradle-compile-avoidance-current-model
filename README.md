@@ -1,7 +1,8 @@
 # Compile Avoidance for the current Gradle model
 
 This project demonstrates how to implement compile avoidance using the new configuration attributes feature of 
-Gradle 3.3. To execute this demo, you need the latest development version of Gradle, built from source.
+Gradle 3.3. To execute this demo, you need the latest development version of Gradle, built from source, or
+simply use the wrapper (which will download a suitable snapshot for you).
 
 This demo adds support:
 
@@ -16,26 +17,26 @@ The demo makes use of [composite builds](https://docs.gradle.org/current/usergui
 and run the demo. Running the demo can be done using:
 
 ```
-gradle run
+./gradlew run
 ```
 
 which will execute the demo program for all platforms. Alternatively, you can execute:
 
 ```
-gradle javaXRun
+./gradlew javaXRun
 ```
 
 to run a specific version (for example, `java7Run` to only run the Java 7 version). Or:
 
 ```
-gradle compileJavaX
+./gradlew compileJavaX
 
 ```
 
 to compile a specific version of the component.
 
 ```
-gradle build
+./gradlew build
 ```
 
 would build all components for all platforms.
@@ -115,7 +116,7 @@ The project consists of 3 modules:
 First, let's compile the Java 7 version of our `core` project:
 
 ```
-$ gradle compileJava7
+$ ./gradlew compileJava7
 :demo
 :demo:someLib:compileJava
 warning: [options] bootstrap class path not set in conjunction with -source 1.7
@@ -152,7 +153,7 @@ Let's see what happens with different use cases.
 We're going to update `utils` so that it uses `commons-lang3` version 3.4 instead of 3.5, then build again:
 
 ```
-$ gradle compileJava7
+$ ./gradlew compileJava7
 :demo
 :demo:someLib:compileJava UP-TO-DATE
 :demo:someLib:processResources UP-TO-DATE
@@ -186,7 +187,7 @@ public class StringInternal implements Function<String, String> {
 Then recompile the project:
 
 ```
-$ gradle compileJava7
+$ ./gradlew compileJava7
 :demo
 :demo:someLib:compileJava UP-TO-DATE
 :demo:someLib:processResources UP-TO-DATE
@@ -219,7 +220,7 @@ body of the `apply` method:
 then recompile the project:
 
 ```
-$ gradle compileJava7
+$ ./gradlew compileJava7
 :demo
 :demo:someLib:compileJava UP-TO-DATE
 :demo:someLib:processResources UP-TO-DATE
@@ -293,7 +294,7 @@ platforms {
 
 ```
 
-then calling: `gradle java9Jar` will show:
+then calling: `./gradlew java9Jar` will show:
 
 ```
 :demo
