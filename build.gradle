@@ -15,6 +15,4 @@ task clean {
    }
 }
 
-dumpConfigurations {
-   dependsOn gradle.includedBuild('demo').task(':core:dumpConfigurations')
-}
+
