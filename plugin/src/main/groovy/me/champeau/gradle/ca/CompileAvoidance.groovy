@@ -20,7 +20,8 @@ class CompileAvoidance implements Plugin<Project> {
         ApiExtension apiExtension = (ApiExtension) project.extensions.create("api", ApiExtension)
         def apiConfiguration = project.configurations.create("api")
         apiConfiguration.transitive = false
-        apiConfiguration.asBucket()
+        apiConfiguration.canBeResolved = false
+        apiConfiguration.canBeConsumed = false
         def configurer = new Configurer(project)
         PlatformsExtension platformsExtension = (PlatformsExtension) project.extensions.create("platforms", PlatformsExtension, configurer)
         // This shouldn't probably be done automatically, it's for demo time
@@ -63,10 +64,12 @@ class CompileAvoidance implements Plugin<Project> {
 
             // Configurations for platform specific dependencies
             def platformApiConfiguration = project.configurations.create("api${capitalizedPlatform}")
-            platformApiConfiguration.asBucket()
+            platformApiConfiguration.canBeResolved = false
+            platformApiConfiguration.canBeConsumed = false
             platformApiConfiguration.extendsFrom(apiConfiguration)
             def platformCompileConfiguration = project.configurations.create("compile${capitalizedPlatform}")
-            platformCompileConfiguration.asBucket()
+            platformCompileConfiguration.canBeResolved = false
+            platformCompileConfiguration.canBeConsumed = false
             platformCompileConfiguration.extendsFrom(platformApiConfiguration)
             platformCompileConfiguration.extendsFrom(compileConfiguration)
 
@@ -116,9 +119,9 @@ class CompileAvoidance implements Plugin<Project> {
             compilePlatformConfiguration.attributes(type: 'api', platform: platform)
             compilePlatformConfiguration.extendsFrom parentConfiguration
             if (query) {
-                compilePlatformConfiguration.forQueryingOrResolvingOnly()
+                compilePlatformConfiguration.canBeConsumed = false
             } else {
-                compilePlatformConfiguration.forConsumingOrPublishingOnly()
+                compilePlatformConfiguration.canBeResolved = false
             }
             compilePlatformConfiguration
         }
@@ -189,7 +192,7 @@ class CompileAvoidance implements Plugin<Project> {
                 // here is the module file generation
                 genDir.mkdirs()
                 def tmpConf = project.configurations.getByName('compile').copy()
-                tmpConf.forQueryingOrResolvingOnly()
+                tmpConf.canBeConsumed = false
                 def requires = tmpConf.files.collect {
                     "   requires ${automaticModule(it.name)};"
                 }.join('\n')
