@@ -172,7 +172,7 @@ class CompileAvoidance implements Plugin<Project> {
                     task.doFirst(new Action<Task>() {
                         @Override
                         void execute(final Task t) {
-                            project.logger.lifecycle "Compile classpath for ${project.path} (${platform}): ${((JavaCompile)t).classpath.asPath}"
+                            project.logger.lifecycle "Compile classpath for ${project.path} (${platform}): ${((JavaCompile)t).classpath.files*.name}"
                         }
                     })
                 }

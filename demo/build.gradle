@@ -1,6 +1,7 @@
 buildscript {
+    repositories { mavenLocal() }
     dependencies {
-        classpath 'me.champeau.gradle:compile-avoidance-plugin:1.0.0'
+        classpath 'me.champeau.gradle:compile-avoidance-plugin:1.0.0-SNAPSHOT'
     }
 }
 

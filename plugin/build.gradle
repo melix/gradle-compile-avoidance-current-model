@@ -1,5 +1,6 @@
 apply plugin: 'idea'
 apply plugin: 'groovy'
+apply plugin: 'maven-publish'
 
 group = 'me.champeau.gradle'
 version = '1.0.0-SNAPSHOT'
@@ -9,3 +10,11 @@ dependencies {
    compile localGroovy()
 }
 
+
+publishing {
+publications {
+   mavenJava(MavenPublication) {
+      from components.java
+   }
+}
+}
